@@ -1,10 +1,38 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+
+    <!--
+    =============================================
+    CONTAGEM REGRESSIVA — CONFRATERNIZAÇÃO DO TI
+    =============================================
+    Arquivo: contador_regressivo_comentado.html
+    Descrição: Página single-file (HTML + CSS + JS) com:
+      • Contagem regressiva (dias, horas, minutos, segundos)
+      • Relógio "Agora" em tempo real
+      • Neve decorativa (emojis/símbolos) animada
+      • Confete via <canvas> com estouros periódicos e ao chegar no dia
+      • Piadas rotativas de TI/Natal
+    Uso: abrir no navegador (não precisa servidor) 
+    Personalização rápida:
+      - Data/hora do evento: função getTargetDate()
+      - Textos: <h1>, <h2>, .pill e mensagem "É HOJE!"
+      - Tema de cores: variáveis CSS em :root
+      - Neve/Confete: função createSnowflakes() e burst(n)
+      - Piadas: array jokes e intervalo (setInterval)
+
+    Observações de acessibilidade (a11y):
+      - Região da contagem com aria-live="polite"
+      - Contraste elevado; tipografia responsiva
+  -->
+
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>🎄 Contagem Regressiva — Confraternização do TI</title>
   <style>
+
+    /* Paleta/tema */
     :root{
       --green-900:#052e16;
       --green-800:#064e3b;
@@ -23,13 +51,18 @@
         radial-gradient(1000px 600px at 15% 10%, rgba(16,185,129,.15), transparent 60%),
         radial-gradient(900px 900px at 85% 20%, rgba(110,231,183,.12), transparent 60%),
         linear-gradient(160deg, var(--green-900), var(--green-800));
-      overflow:hidden;
+      overflow:hidden;  /* Para não vazar o canvas/confete */
     }
     .pill{display:inline-flex; gap:10px; align-items:center; padding:8px 14px; border-radius:999px; background: #ffffff14; border:1px solid #ffffff2a; backdrop-filter: blur(6px); font-weight:700}
     .pill .dot{width:8px;height:8px;border-radius:50%; background: var(--green-300); box-shadow:0 0 16px var(--green-300)}
+    
+    
+    /* Títulos principais */
     h1{margin:8px 0 2px; font-size: clamp(28px, 5vw, 52px); line-height:1.1; font-weight:900; text-shadow:0 6px 18px #0006}
     h2{margin:0 0 14px; font-weight:700; opacity:.95}
 
+
+    /*  */
     .countdown{display:flex; gap:16px; flex-wrap:wrap; justify-content:center}
     .time-box{position:relative; text-align:center; background:linear-gradient(180deg, rgba(6,95,70,.9), rgba(6,78,59,.9)); padding:18px 20px; border-radius:16px; min-width:90px; border:1px solid #ffffff22; box-shadow: inset 0 0 0 1px #0005, 0 10px 28px #0006}
     .time-box span{display:block; font-size: clamp(34px, 6vw, 64px); font-weight:900; letter-spacing:1px}
@@ -52,8 +85,12 @@
   </style>
 </head>
 <body>
+    
+    <!-- Canvas dedicado ao efeito de confete -->
   <canvas id="confetti"></canvas>
   <div class="pill"><span class="dot"></span> 🎧 TI no clima — Natal, risadas e deploy só depois da pizza</div>
+
+  <!-- Titulos para o evento -->
   <h1>🎄 Confraternização do TI — Contagem Regressiva</h1>
   <h2>Dia 20 de dezembro • Especial de Natal 💚</h2>
 
@@ -66,6 +103,7 @@
 
   <div class="clock">Agora: <span id="nowClock">--:--:--</span></div>
 
+  <!-- Piadinhas que vai passando (para alterar as piadas basta ir no array do JS) -->
   <div class="jokes">
     <div class="title">Boas risadas da TI</div>
     <div id="joke">Carregando piada natalina de TI…</div>
@@ -82,26 +120,39 @@
     }
     const targetDate = getTargetDate();
 
+
+    // Melhora o desempenho, guardando as referencias de elementos 
     const daysEl = document.getElementById('days');
     const hoursEl = document.getElementById('hours');
     const minutesEl = document.getElementById('minutes');
     const secondsEl = document.getElementById('seconds');
     const nowClock = document.getElementById('nowClock');
 
+
+    // Adiciona o 0 a esquerda, para sempre ficar com dois dígitos 00, 01..
     function pad(n){return String(n).padStart(2,'0');}
 
+  /**
+    Atualiza relógio e contagem regressiva a cada 1s.
+    - Quando chega a 0, troca o título e estoura confete grande.
+  */
+
     function updateCountdown(){
+        // formato pt-br
       const now = new Date();
       nowClock.textContent = now.toLocaleTimeString('pt-BR');
-      const diff = targetDate - now;
 
+        // Calcula a diferença
+      const diff = targetDate - now;
+        // Chegou o dia/horário: trava contagem e comemora
       if(diff <= 0){
         ['days','hours','minutes','seconds'].forEach(id => document.getElementById(id).textContent = '00');
         document.querySelector('h1').textContent = '🎉 É HOJE! Feliz Confraternização do TI!';
-        burst(400);
+        burst(400); //ESTOURA O MAIIOOOR CONFETE
         return;
       }
 
+        // Converte diferença para componentes de tempo
       const totalSeconds = Math.floor(diff/1000);
       const days = Math.floor(totalSeconds/86400);
       const hours = Math.floor((totalSeconds%86400)/3600);
@@ -118,7 +169,8 @@
     setInterval(updateCountdown, 1000); updateCountdown();
 
     (function createSnowflakes(){
-      const snowCount = 60; const symbols = ['❄','❅','✦','✧','＊'];
+      const snowCount = 60; // Quantidade de flocos simultâneos
+      const symbols = ['❄','❅','✦','✧','＊']; //Personalizando aqui
       for(let i=0;i<snowCount;i++){
         const s = document.createElement('div');
         s.className = 'snowflake';
