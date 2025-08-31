@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🎄 Contagem Regressiva — Confraternização do TI</title>
+  <style>
+    :root{
+      --green-900:#052e16;
+      --green-800:#064e3b;
+      --green-700:#065f46;
+      --green-500:#10b981;
+      --green-300:#6ee7b7;
+      --text:#eafff4;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:10px;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
+      color:var(--text);
+      background:
+        radial-gradient(1000px 600px at 15% 10%, rgba(16,185,129,.15), transparent 60%),
+        radial-gradient(900px 900px at 85% 20%, rgba(110,231,183,.12), transparent 60%),
+        linear-gradient(160deg, var(--green-900), var(--green-800));
+      overflow:hidden;
+    }
+    .pill{display:inline-flex; gap:10px; align-items:center; padding:8px 14px; border-radius:999px; background: #ffffff14; border:1px solid #ffffff2a; backdrop-filter: blur(6px); font-weight:700}
+    .pill .dot{width:8px;height:8px;border-radius:50%; background: var(--green-300); box-shadow:0 0 16px var(--green-300)}
+    h1{margin:8px 0 2px; font-size: clamp(28px, 5vw, 52px); line-height:1.1; font-weight:900; text-shadow:0 6px 18px #0006}
+    h2{margin:0 0 14px; font-weight:700; opacity:.95}
+
+    .countdown{display:flex; gap:16px; flex-wrap:wrap; justify-content:center}
+    .time-box{position:relative; text-align:center; background:linear-gradient(180deg, rgba(6,95,70,.9), rgba(6,78,59,.9)); padding:18px 20px; border-radius:16px; min-width:90px; border:1px solid #ffffff22; box-shadow: inset 0 0 0 1px #0005, 0 10px 28px #0006}
+    .time-box span{display:block; font-size: clamp(34px, 6vw, 64px); font-weight:900; letter-spacing:1px}
+    .label{font-size:.8rem; opacity:.85; text-transform:uppercase; letter-spacing:.6px}
+
+    .clock{margin-top:6px; font-size:1rem; font-weight:800; background:#0000002b; padding:8px 12px; border-radius:10px; border:1px solid #ffffff22}
+
+    .jokes{margin-top:10px; max-width:900px; padding:10px 14px; border:1px dashed #ffffff38; border-radius:12px; background:#0000001c; font-weight:700}
+    .jokes .title{opacity:.9; font-size:.9rem; text-transform:uppercase; letter-spacing:.6px}
+    .jokes #joke{margin-top:6px; font-size:1.05rem}
+
+    .snowflake{position: fixed; top: -10px; color: #fff; text-shadow:0 0 6px rgba(255,255,255,.6); font-size: 1em; pointer-events:none; user-select:none; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite}
+    @keyframes fall{ to { transform: translateY(110vh) rotate(1turn) }}
+
+    #confetti{position:fixed; inset:0; pointer-events:none}
+
+    footer{margin-top:8px; font-size:.85rem; opacity:.85}
+
+    @media (max-width:720px){ .countdown{gap:10px} .time-box{min-width:78px; padding:14px} }
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+  <div class="pill"><span class="dot"></span> 🎧 TI no clima — Natal, risadas e deploy só depois da pizza</div>
+  <h1>🎄 Confraternização do TI — Contagem Regressiva</h1>
+  <h2>Dia 20 de dezembro • Especial de Natal 💚</h2>
+
+  <div class="countdown" aria-live="polite">
+    <div class="time-box"><span id="days">00</span><div class="label">Dias</div></div>
+    <div class="time-box"><span id="hours">00</span><div class="label">Horas</div></div>
+    <div class="time-box"><span id="minutes">00</span><div class="label">Minutos</div></div>
+    <div class="time-box"><span id="seconds">00</span><div class="label">Segundos</div></div>
+  </div>
+
+  <div class="clock">Agora: <span id="nowClock">--:--:--</span></div>
+
+  <div class="jokes">
+    <div class="title">Boas risadas da TI</div>
+    <div id="joke">Carregando piada natalina de TI…</div>
+  </div>
+
+  <footer>Feito com 💚 pelo time de TI — prometemos: <em>sem</em> atualização em produção durante a festa (a menos que seja a playlist). 😅</footer>
+
+  <script>
+    function getTargetDate(){
+      const now = new Date();
+      const year = now.getFullYear();
+      const target = new Date(year, 11, 20, 19, 0, 0);
+      return now > target ? new Date(year+1, 11, 20, 19, 0, 0) : target;
+    }
+    const targetDate = getTargetDate();
+
+    const daysEl = document.getElementById('days');
+    const hoursEl = document.getElementById('hours');
+    const minutesEl = document.getElementById('minutes');
+    const secondsEl = document.getElementById('seconds');
+    const nowClock = document.getElementById('nowClock');
+
+    function pad(n){return String(n).padStart(2,'0');}
+
+    function updateCountdown(){
+      const now = new Date();
+      nowClock.textContent = now.toLocaleTimeString('pt-BR');
+      const diff = targetDate - now;
+
+      if(diff <= 0){
+        ['days','hours','minutes','seconds'].forEach(id => document.getElementById(id).textContent = '00');
+        document.querySelector('h1').textContent = '🎉 É HOJE! Feliz Confraternização do TI!';
+        burst(400);
+        return;
+      }
+
+      const totalSeconds = Math.floor(diff/1000);
+      const days = Math.floor(totalSeconds/86400);
+      const hours = Math.floor((totalSeconds%86400)/3600);
+      const minutes = Math.floor((totalSeconds%3600)/60);
+      const seconds = totalSeconds%60;
+
+      daysEl.textContent = pad(days);
+      hoursEl.textContent = pad(hours);
+      minutesEl.textContent = pad(minutes);
+      secondsEl.textContent = pad(seconds);
+
+      if(seconds === 0) burst(80);
+    }
+    setInterval(updateCountdown, 1000); updateCountdown();
+
+    (function createSnowflakes(){
+      const snowCount = 60; const symbols = ['❄','❅','✦','✧','＊'];
+      for(let i=0;i<snowCount;i++){
+        const s = document.createElement('div');
+        s.className = 'snowflake';
+        s.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+        s.style.left = Math.random()*100 + 'vw';
+        s.style.fontSize = (12+Math.random()*22)+'px';
+        s.style.animationDuration = (8+Math.random()*12)+'s';
+        s.style.animationDelay = (Math.random()*-20)+'s';
+        s.style.opacity = 0.7 + Math.random()*0.3;
+        document.body.appendChild(s);
+      }
+    })();
+
+    const canvas = document.getElementById('confetti');
+    const ctx = canvas.getContext('2d');
+    let W,H,particles=[]; function resize(){ W = canvas.width = innerWidth; H = canvas.height = innerHeight } window.addEventListener('resize', resize); resize();
+    function addConfetti(n){
+      for(let i=0;i<n;i++){
+        particles.push({ x:Math.random()*W, y:-20, r:4+Math.random()*6, s:1+Math.random()*3, a:Math.random()*6.28, rot:Math.random()*6.28, dr:(Math.random()-.5)*0.2 });
+      }
+    }
+    function loop(){
+      ctx.clearRect(0,0,W,H); ctx.globalCompositeOperation='lighter';
+      for(const p of particles){ p.y+=p.s; p.x+=Math.sin(p.a+=0.02)*0.8; p.rot+=p.dr; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+        const hue = (120 + (p.x/W*120) + (p.y/H*60))%360;
+        ctx.fillStyle = `hsl(${hue},90%,55%)`; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r); ctx.restore(); }
+      particles = particles.filter(p=>p.y<H+50); requestAnimationFrame(loop);
+    } loop();
+    function burst(n=150){ addConfetti(n); }
+    burst(120);
+
+    const jokes = [
+      'Por que o Papai Noel não usa HTTP? Porque é tudo HO-HO-HO-PS! 😅',
+      'Amigo oculto da TI: descubra via brute force… ou leia o README. 🎁',
+      'Se chover, relaxa: o time já sabe trabalhar em nuvem. ☁️',
+      'Promessa da noite: zero rollback. Só roll… de sushi. 🍣',
+      'Bug de Natal? Só se for o do grilo falante. 🦗',
+      'Hoje o deploy é no karaokê: subir voz em produção! 🎤',
+      'Quem bebeu muito? O cache — tá cheio de hits! 🥂',
+      'Monitoramento ativo: se a pizza cair, abre incidente P0. 🍕',
+      'Hoje só damos merge: equipe + risadas = feature entregue. 🤝',
+      'Time de Redes: se faltar cerveja, já vamos abrir chamado de latência. 🍺',
+      'Sistemas garantiu: o único downtime hoje é da dieta. 🍰',
+      'Equipe de Dados prometeu relatórios… mas só de quantas fatias de pizza cada um comeu. 📊',
+      'Infra avisou: se o Wi-Fi cair, começa a brincadeira offline — jogo da cadeira. 🪑',
+      'Segurança da Informação só deixou entrar quem trouxe sobremesa. 🔐🍮',
+      'Suporte avisou: hoje, problema de usuário é só se esquecerem o presente do amigo secreto. 🎁'
+    ];
+    const jokeEl = document.getElementById('joke');
+    let ji = 0; function rotateJokes(){ jokeEl.textContent = jokes[ji%jokes.length]; ji++; }
+    rotateJokes(); setInterval(rotateJokes, 6000);
+  </script>
+</body>
+</html>
